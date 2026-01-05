@@ -38,41 +38,43 @@
         <button onclick="location.reload()" style="padding:10px; margin-top:20px;">RESET SCAN</button>
     </div>
 
-    <script>
-        // REPLACE WITH YOUR NEW FIREBASE URL
-        const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
-        firebase.initializeApp(firebaseConfig);
+   <script>
+    // 1. Firebase Configuration
+    const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
+    firebase.initializeApp(firebaseConfig);
 
-        // 2. WAIT FOR PAGE TO LOAD COMPLETELY
-        window.onload = function() {
-            // REPLACE with your actual GitHub link
-            const scannerUrl = "https://dinzs01.github.io/AI-Palm-Scanner/palm_scanner.html";
+    // 2. The QR Fix
+    document.addEventListener("DOMContentLoaded", function() {
+        const scannerUrl = "https://dinzs01.github.io/AI-Palm-Scanner/palm_scanner.html";
+        const qrElement = document.getElementById("qrcode");
+
+        if (qrElement) {
+            // Clear the container first
+            qrElement.innerHTML = ""; 
             
-            const qrcodeContainer = document.getElementById("qrcode");
-            
-            // Clear the "white block" before generating
-            qrcodeContainer.innerHTML = ""; 
-            
-            new QRCode(qrcodeContainer, {
+            // Generate QR Code
+            new QRCode(qrElement, {
                 text: scannerUrl,
-                width: 256,
-                height: 256,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
+                width: 200,
+                height: 200
             });
-        };
+            console.log("QR Code generated successfully!");
+        } else {
+            console.error("Could not find the 'qrcode' div!");
+        }
+    });
 
-        // Listen for Firebase update from the phone
-        firebase.database().ref('palm_reading_data').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.scanning) {
-                document.getElementById('qr-screen').style.display = 'none';
-                document.getElementById('results').style.display = 'block';
-            }
-        });
-    </script>
+    // 3. Listen for Firebase updates
+    firebase.database().ref('palm_reading_data').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.scanning) {
+            document.getElementById('qr-screen').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+        }
+    });
+</script>
 </body>
 </html>
+
 
 

@@ -1,45 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Palmistry Dashboard</title>
+    <title>Palmistry Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: 'Georgia', serif; text-align: center; background: #1a1a2e; color: gold; }
-        #qrcode { margin: 20px auto; background: white; padding: 10px; width: fit-content; }
-        .reading-card { border: 2px solid gold; margin: 20px; padding: 20px; display: none; }
+        body { background: #0a0a23; color: #f1c40f; text-align: center; font-family: serif; }
+        .box { 
+            background: white; 
+            padding: 20px; 
+            width: 256px; /* Match default QR size */
+            height: 256px;
+            margin: 20px auto; 
+            border-radius: 10px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #results { display: none; margin-top: 50px; padding: 30px; border: 3px double gold; background: #1a1a2e; }
+        .line { font-size: 1.5rem; margin: 15px; border-left: 4px solid gold; padding-left: 10px; text-align: left; }
     </style>
 </head>
 <body>
-    <h1>Ancient Palmistry AI</h1>
-    <p>Scan this QR with your phone to start the scan</p>
-    <div id="qrcode"></div>
+    <h1>🌟 AI SAMUDRIKA SHASTRA 🌟</h1>
+    
+    <div id="qr-screen">
+        <h3>Scan to Reveal Your Future</h3>
+        <div id="qrcode" class="box"></div>
+        <p>Align your hand with the phone's camera</p>
+    </div>
 
-    <div id="reading" class="reading-card">
-        <h2>Your Palm Analysis</h2>
-        <p id="line1">❤️ Heart Line: Strong and vibrant.</p>
-        <p id="line2">🧠 Head Line: Deep intelligence detected.</p>
-        <p id="line3">🌱 Life Line: Long and full of energy.</p>
+    <div id="results">
+        <div class="line">❤️ <b>Heart Line:</b> Strong emotional intelligence.</div>
+        <div class="line">🧠 <b>Head Line:</b> Logical and analytical mind.</div>
+        <div class="line">🌱 <b>Life Line:</b> Full of energy and vitality.</div>
+        <button onclick="location.reload()" style="padding:10px; margin-top:20px;">RESET SCAN</button>
     </div>
 
     <script>
+        // REPLACE WITH YOUR NEW FIREBASE URL
         const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
         firebase.initializeApp(firebaseConfig);
 
-        // Generate QR Code for the tracker URL
-       // Example: If your repo name is "ai-palm-scanner"
-const scannerUrl = "https://dinzs.github.io/ai-palm-scanner/palm_scanner.html";
-new QRCode(document.getElementById("qr-container"), scannerUrl);
+        // 2. WAIT FOR PAGE TO LOAD COMPLETELY
+        window.onload = function() {
+            // REPLACE with your actual GitHub link
+            const scannerUrl = "https://YOUR_USER.github.io/YOUR_REPO/palm_scanner.html";
+            
+            const qrcodeContainer = document.getElementById("qrcode");
+            
+            // Clear the "white block" before generating
+            qrcodeContainer.innerHTML = ""; 
+            
+            new QRCode(qrcodeContainer, {
+                text: scannerUrl,
+                width: 256,
+                height: 256,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        };
 
-        // Listen for phone detection
-        firebase.database().ref('palm_reading').on('value', (snapshot) => {
-            if (snapshot.val() && snapshot.val().detected) {
-                document.getElementById('reading').style.display = 'block';
-                document.getElementById('qrcode').style.display = 'none';
+        // Listen for Firebase update from the phone
+        firebase.database().ref('palm_reading_data').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.scanning) {
+                document.getElementById('qr-screen').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
             }
         });
     </script>
 </body>
-
 </html>
+

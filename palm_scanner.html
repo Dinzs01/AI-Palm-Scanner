@@ -43,41 +43,32 @@
                 highlightLines(lm);
                 
                 // Alert the Dashboard that a hand is being scanned
-                database.ref('palm_reading_data').set({
-                    scanning: true,
-                    timestamp: Date.now()
-                });
-            }
-            canvasCtx.restore();
-        });
+               // ... (keep Firebase and Mediapipe imports the same)
 
-        function highlightLines(lm) {
-            canvasCtx.lineWidth = 5;
-            canvasCtx.lineCap = "round";
-            const w = canvasElement.width;
-            const h = canvasElement.height;
+// Listen for Reset from Laptop
+database.ref('palm_reading_data').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.scanning === false) {
+        // If laptop says scanning is false, we clear our screen
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        document.getElementById('status').innerText = "Ready for new scan...";
+    }
+});
 
-            // HEART LINE (Pink)
-            canvasCtx.strokeStyle = "#ff00ff";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[17].x * w, lm[17].y * h);
-            canvasCtx.quadraticCurveTo(lm[13].x * w, lm[10].y * h, lm[5].x * w, lm[6].y * h);
-            canvasCtx.stroke();
+// Improved drawing function for smoother lines
+function highlightLines(lm) {
+    canvasCtx.save();
+    canvasCtx.lineWidth = 6;
+    canvasCtx.lineCap = "round";
+    canvasCtx.shadowBlur = 10;
+    canvasCtx.shadowColor = "white"; // Makes lines "Glow"
 
-            // HEAD LINE (Yellow)
-            canvasCtx.strokeStyle = "#ffff00";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.lineTo(lm[13].x * w, lm[10].y * h);
-            canvasCtx.stroke();
-
-            // LIFE LINE (Green)
-            canvasCtx.strokeStyle = "#00ff00";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.quadraticCurveTo(lm[2].x * w, lm[0].y * h, lm[0].x * w, lm[0].y * h);
-            canvasCtx.stroke();
-        }
+    // Draw Heart Line
+    canvasCtx.strokeStyle = "#ff00ff";
+    // ... (rest of your line drawing code)
+    canvasCtx.stroke();
+    canvasCtx.restore();
+}
 
         const camera = new Camera(videoElement, {
             onFrame: async () => { await hands.send({image: videoElement}); },
@@ -86,4 +77,5 @@
         camera.start();
     </script>
 </body>
+
 </html>

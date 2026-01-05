@@ -2,33 +2,35 @@
 <html>
 <head>
     <title>AI Scanner</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <style>
-        /* CSS FOR CAMERA FILTERS */
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
-        #canvas_container { position: relative; width: 100vw; height: 100vh; }
-        canvas { 
-            width: 100%; height: 100%; object-fit: cover; 
-            filter: brightness(1.2) contrast(1.1) saturate(1.2); 
-            transform: scaleX(-1); /* Mirror for natural feel */
-        }
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; color: gold; }
+        #canvas_container { position: relative; width: 100vw; height: 100vh; background: #111; }
+        
+        /* This ensures the camera is visible even if AI lines haven't loaded yet */
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        
         #status { 
             position: absolute; top: 20px; width: 100%; text-align: center; 
-            color: gold; font-weight: bold; font-size: 1.5rem; text-shadow: 0 0 10px #000;
+            z-index: 100; font-weight: bold; font-size: 1.2rem; text-shadow: 2px 2px 4px #000;
         }
     </style>
 </head>
 <body>
-    <div id="status">Position Palm in Camera</div>
+    <div id="status">INITIALIZING CAMERA...</div>
     <div id="canvas_container">
-        <video id="input_video" style="display:none;"></video>
+        <video id="input_video" playsinline></video>
         <canvas id="output_canvas"></canvas>
     </div>
 
     <script>
+        // 1. FIREBASE SETUP
         const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
@@ -37,79 +39,63 @@
         const canvasElement = document.getElementById('output_canvas');
         const canvasCtx = canvasElement.getContext('2d');
 
+        // 2. AI HANDS SETUP
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7 });
-
-        // Listen for Remote Reset from Laptop
-        database.ref('palm_reading_data').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.scanning === false) {
-                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-                document.getElementById('status').innerText = "Ready for New Person";
-            }
-        });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
 
         hands.onResults((results) => {
+            // Adjust canvas size to match video
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
             
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
                 drawGlowingLines(lm);
+                
+                // Alert the laptop
                 database.ref('palm_reading_data').update({ scanning: true });
-                document.getElementById('status').innerText = "HAND DETECTED - ANALYZING";
+                document.getElementById('status').innerText = "AI DETECTED HAND";
+            } else {
+                document.getElementById('status').innerText = "SHOW YOUR PALM";
             }
             canvasCtx.restore();
         });
 
         function drawGlowingLines(lm) {
-            canvasCtx.lineWidth = 8;
+            canvasCtx.lineWidth = 10;
             canvasCtx.lineCap = "round";
             canvasCtx.shadowBlur = 15;
             const w = canvasElement.width; const h = canvasElement.height;
 
-            // Heart Line (Pink Glow)
+            // Heart Line (Pink)
             canvasCtx.strokeStyle = "#ff00ff"; canvasCtx.shadowColor = "#ff00ff";
             canvasCtx.beginPath();
             canvasCtx.moveTo(lm[17].x * w, lm[17].y * h);
             canvasCtx.quadraticCurveTo(lm[13].x * w, lm[10].y * h, lm[5].x * w, lm[6].y * h);
             canvasCtx.stroke();
-
-            // Head Line (Yellow Glow)
-            canvasCtx.strokeStyle = "#ffff00"; canvasCtx.shadowColor = "#ffff00";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.lineTo(lm[13].x * w, lm[10].y * h);
-            canvasCtx.stroke();
         }
 
-       // Replace the bottom Camera part of your palm_scanner.html with this:
+        // 3. START CAMERA
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await hands.send({image: videoElement}); },
+            width: 640, height: 480
+        });
+        
+        camera.start().then(() => {
+            document.getElementById('status').innerText = "CAMERA ACTIVE";
+        }).catch(err => {
+            document.getElementById('status').innerText = "CAMERA ERROR: " + err;
+        });
 
-const camera = new Camera(videoElement, {
-    onFrame: async () => {
-        try {
-            await hands.send({image: videoElement});
-        } catch (e) {
-            console.error("AI processing error:", e);
-        }
-    },
-    width: 640,  // Lowering resolution slightly makes it much faster on phones
-    height: 480
-});
-
-// Use a Promise to ensure the camera starts correctly
-camera.start()
-    .then(() => {
-        console.log("Camera started successfully");
-        document.getElementById('status').innerText = "Camera Active - Show Palm";
-    })
-    .catch((err) => {
-        console.error("Camera failed:", err);
-        document.getElementById('status').innerText = "Error: Please Allow Camera Access";
-    });
+        // Listen for reset from Dashboard
+        database.ref('palm_reading_data').on('value', (snapshot) => {
+            if (snapshot.val() && snapshot.val().scanning === false) {
+                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            }
+        });
     </script>
 </body>
 </html>
-
-

@@ -24,12 +24,13 @@
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "YOUR_FIREBASE_URL" };
+        const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
         firebase.initializeApp(firebaseConfig);
 
         // Generate QR Code for the tracker URL
-        const trackerUrl = "https://YOUR_USER.github.io/YOUR_REPO/hand_tracker.html";
-        new QRCode(document.getElementById("qrcode"), trackerUrl);
+       // Example: If your repo name is "ai-palm-scanner"
+const scannerUrl = "https://dinzs.github.io/ai-palm-scanner/palm_scanner.html";
+new QRCode(document.getElementById("qr-container"), scannerUrl);
 
         // Listen for phone detection
         firebase.database().ref('palm_reading').on('value', (snapshot) => {
@@ -40,4 +41,5 @@
         });
     </script>
 </body>
+
 </html>

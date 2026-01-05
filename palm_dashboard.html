@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Palmistry Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Georgia', serif; text-align: center; background: #1a1a2e; color: gold; }
+        #qrcode { margin: 20px auto; background: white; padding: 10px; width: fit-content; }
+        .reading-card { border: 2px solid gold; margin: 20px; padding: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <h1>Ancient Palmistry AI</h1>
+    <p>Scan this QR with your phone to start the scan</p>
+    <div id="qrcode"></div>
+
+    <div id="reading" class="reading-card">
+        <h2>Your Palm Analysis</h2>
+        <p id="line1">❤️ Heart Line: Strong and vibrant.</p>
+        <p id="line2">🧠 Head Line: Deep intelligence detected.</p>
+        <p id="line3">🌱 Life Line: Long and full of energy.</p>
+    </div>
+
+    <script>
+        const firebaseConfig = { databaseURL: "YOUR_FIREBASE_URL" };
+        firebase.initializeApp(firebaseConfig);
+
+        // Generate QR Code for the tracker URL
+        const trackerUrl = "https://YOUR_USER.github.io/YOUR_REPO/hand_tracker.html";
+        new QRCode(document.getElementById("qrcode"), trackerUrl);
+
+        // Listen for phone detection
+        firebase.database().ref('palm_reading').on('value', (snapshot) => {
+            if (snapshot.val() && snapshot.val().detected) {
+                document.getElementById('reading').style.display = 'block';
+                document.getElementById('qrcode').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

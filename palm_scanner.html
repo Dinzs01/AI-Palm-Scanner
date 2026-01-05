@@ -84,12 +84,32 @@
             canvasCtx.stroke();
         }
 
-        const camera = new Camera(videoElement, {
-            onFrame: async () => { await hands.send({image: videoElement}); },
-            width: 1280, height: 720
-        });
-        camera.start();
+       // Replace the bottom Camera part of your palm_scanner.html with this:
+
+const camera = new Camera(videoElement, {
+    onFrame: async () => {
+        try {
+            await hands.send({image: videoElement});
+        } catch (e) {
+            console.error("AI processing error:", e);
+        }
+    },
+    width: 640,  // Lowering resolution slightly makes it much faster on phones
+    height: 480
+});
+
+// Use a Promise to ensure the camera starts correctly
+camera.start()
+    .then(() => {
+        console.log("Camera started successfully");
+        document.getElementById('status').innerText = "Camera Active - Show Palm";
+    })
+    .catch((err) => {
+        console.error("Camera failed:", err);
+        document.getElementById('status').innerText = "Error: Please Allow Camera Access";
+    });
     </script>
 </body>
 </html>
+
 

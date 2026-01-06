@@ -2,14 +2,14 @@
 <html>
 <head>
     <title>AI Palmistry Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         /* CSS FOR DASHBOARD */
         body { background: #0c0c1e; color: #ffd700; font-family: 'Times New Roman', serif; text-align: center; margin: 0; padding: 20px; }
         h1 { text-shadow: 0 0 10px gold; font-size: 3rem; }
-        #qr-container { background: white; padding: 20px; width: fit-content; margin: 40px auto; border-radius: 15px; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        #qr-container { background: white; padding: 20px; width: 250px; height: 250px; margin: 40px auto; border-radius: 15px; box-shadow: 0 0 20px rgba(255,255,255,0.2); display: flex; justify-content: center; align-items: center; }
         .result-panel { display: none; margin: 50px auto; max-width: 700px; padding: 30px; border: 4px double gold; background: rgba(255,255,255,0.05); border-radius: 20px; animation: fadeIn 1.5s; }
         .line-reading { margin: 25px; font-size: 22px; text-align: left; line-height: 1.6; border-left: 5px solid gold; padding-left: 15px; }
         #resetBtn { margin-top: 30px; padding: 15px 40px; background: gold; color: #000; border: none; border-radius: 30px; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: 0.3s; }
@@ -22,21 +22,32 @@
     
     <div id="setup-screen">
         <p style="font-size: 1.5rem;">Scan QR to analyze Palmar Flexion Creases</p>
-        <div id="qr-container"></div>
-    </div>
+        <div id="qr-container"></div> </div>
 
     <div id="result-panel" class="result-panel">
         <h2>Your Destiny Revealed</h2>
-        <div class="line-reading">❤️ <b>Heart Line:</b> High emotional intelligence detected.</div>
-        <div class="line-reading">🧠 <b>Head Line:</b> Strong logical and creative balance.</div>
-        <div class="line-reading">🌱 <b>Life Line:</b> Great energy and a long, vibrant path.</div>
+        <div id="line-heart" class="line-reading">❤️ <b>Heart Line:</b> Scanning...</div>
+        <div id="line-head" class="line-reading">🧠 <b>Head Line:</b> Scanning...</div>
+        <div id="line-life" class="line-reading">🌱 <b>Life Line:</b> Scanning...</div>
         <button id="resetBtn">RESET FOR NEW VISITOR</button>
     </div>
 
-       <script>
+<script>
     const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+
+    // --- FIX 1: GENERATE THE QR CODE ---
+    window.addEventListener('load', function() {
+        // REPLACE WITH YOUR ACTUAL GITHUB URL
+        const scannerUrl = "https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/palm_scanner.html";
+        
+        new QRCode(document.getElementById("qr-container"), {
+            text: scannerUrl,
+            width: 250,
+            height: 250
+        });
+    });
 
     // 1. Array of different Indian Astrology readings
     const readings = [
@@ -49,10 +60,9 @@
     database.ref('palm_reading_data').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && data.scanning === true) {
-            // Pick a random reading from the list above
             const randomPick = readings[Math.floor(Math.random() * readings.length)];
             
-            // Update the text on the screen
+            // Update the text on the screen using the correct IDs
             document.getElementById('line-heart').innerHTML = "❤️ <b>Heart Line:</b> " + randomPick.heart;
             document.getElementById('line-head').innerHTML = "🧠 <b>Head Line:</b> " + randomPick.head;
             document.getElementById('line-life').innerHTML = "🌱 <b>Life Line:</b> " + randomPick.life;

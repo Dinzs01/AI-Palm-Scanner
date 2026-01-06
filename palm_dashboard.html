@@ -43,11 +43,24 @@
             const scannerUrl = "https://dinzs01.github.io/AI-Palm-Scanner/palm_scanner.html";
             new QRCode(document.getElementById("qr-container"), { text: scannerUrl, width: 250, height: 250 });
         };
+        // 1. Array of different Indian Astrology readings
+    const readings = [
+        { heart: "Generous and empathetic.", head: "Analytical and logical.", life: "Full of adventure and travel." },
+        { heart: "Strong emotional balance.", head: "Creative and artistic mind.", life: "Stable and peaceful journey." },
+        { heart: "Deeply loyal and caring.", head: "Quick learner and sharp wit.", life: "High energy and leadership." }
+    ];
 
         // 2. Listen for Phone Data
         database.ref('palm_reading_data').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && data.scanning === true) {
+
+                const randomPick = readings[Math.floor(Math.random() * readings.length)];
+            
+            // Update the text on the screen
+            document.getElementById('line-heart').innerHTML = "❤️ <b>Heart Line:</b> " + randomPick.heart;
+            document.getElementById('line-head').innerHTML = "🧠 <b>Head Line:</b> " + randomPick.head;
+            document.getElementById('line-life').innerHTML = "🌱 <b>Life Line:</b> " + randomPick.life;
                 document.getElementById('setup-screen').style.display = 'none';
                 document.getElementById('result-panel').style.display = 'block';
             }
@@ -62,6 +75,7 @@
     </script>
 </body>
 </html>
+
 
 
 

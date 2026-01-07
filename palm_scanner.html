@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI 3D Scientific Scanner</title>
+    <title>AI 3D Pro Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
-        #status { position: absolute; top: 15px; width: 100%; text-align: center; color: #00f2ff; font-weight: bold; font-size: 1.2rem; z-index: 10; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px #000; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+        #status { position: absolute; top: 20px; width: 100%; text-align: center; color: #00f2ff; font-weight: bold; z-index: 100; text-shadow: 0 0 10px #000; font-size: 1.2rem; }
         video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
-    <div id="status">System Online - Awaiting Subject</div>
-    <video id="input_video" playsinline></video>
+    <div id="status">SYSTEM INITIALIZING...</div>
+    <video id="input_video" playsinline style="display:none;"></video>
     <canvas id="output_canvas"></canvas>
 
     <script>
@@ -27,96 +27,80 @@
         const canvasCtx = canvasElement.getContext('2d');
         
         let laserY = 0;
-        let laserDirection = 1;
+        let laserDir = 1;
 
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7 });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.75 });
 
         hands.onResults((results) => {
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            const w = canvasElement.width;
+            const h = canvasElement.height;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, w, h);
             
+            // Draw the actual camera feed as the background
+            canvasCtx.drawImage(results.image, 0, 0, w, h);
+
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
-                
-                // 1. Draw the 3D Cyber-Grid (Hand Only)
-                draw3DGrid(lm);
-                
-                // 2. Draw the Real Palm Lines (Scientific)
-                drawPalmLines(lm);
-                
-                // 3. Draw the Moving Laser Scan
-                drawLaserScan();
+
+                // --- LAYER 1: 3D CYBER MESH (Faint Blue) ---
+                canvasCtx.lineWidth = 1;
+                canvasCtx.strokeStyle = "rgba(0, 242, 255, 0.5)";
+                const connections = [[0,1,2,3,4], [0,5,6,7,8], [5,9,13,17,0], [9,10,11,12], [13,14,15,16], [17,18,19,20]];
+                connections.forEach(p => {
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(lm[p[0]].x * w, lm[p[0]].y * h);
+                    for(let i=1; i<p.length; i++) canvasCtx.lineTo(lm[p[i]].x * w, lm[p[i]].y * h);
+                    canvasCtx.stroke();
+                });
+
+                // --- LAYER 2: SCIENTIFIC PALM LINES (Glowing Colors) ---
+                canvasCtx.lineWidth = 6;
+                canvasCtx.lineCap = "round";
+                canvasCtx.shadowBlur = 15;
+
+                // Heart Line (Pink)
+                canvasCtx.strokeStyle = "#ff00ff"; canvasCtx.shadowColor = "#ff00ff";
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(lm[17].x * w, lm[17].y * h + (h*0.04));
+                canvasCtx.bezierCurveTo(lm[13].x * w, lm[13].y * h, lm[9].x * w, lm[9].y * h, lm[5].x * w, lm[5].y * h + (h*0.04));
+                canvasCtx.stroke();
+
+                // Head Line (Yellow)
+                canvasCtx.strokeStyle = "#ffff00"; canvasCtx.shadowColor = "#ffff00";
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
+                canvasCtx.lineTo(lm[13].x * w, lm[13].y * h + (h*0.08));
+                canvasCtx.stroke();
+
+                // Life Line (Green)
+                canvasCtx.strokeStyle = "#00ff00"; canvasCtx.shadowColor = "#00ff00";
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
+                canvasCtx.quadraticCurveTo(lm[2].x * w, lm[5].y * h + (h*0.1), lm[0].x * w, lm[0].y * h);
+                canvasCtx.stroke();
+
+                // --- LAYER 3: MOVING LASER ---
+                laserY += (10 * laserDir);
+                if(laserY > h || laserY < 0) laserDir *= -1;
+                canvasCtx.strokeStyle = "rgba(0, 242, 255, 0.8)";
+                canvasCtx.shadowColor = "#00f2ff";
+                canvasCtx.lineWidth = 3;
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(0, laserY); canvasCtx.lineTo(w, laserY);
+                canvasCtx.stroke();
 
                 database.ref('palm_reading_data').update({ scanning: true });
-                document.getElementById('status').innerText = "BIOMETRIC SCAN IN PROGRESS...";
+                document.getElementById('status').innerText = "BIOMETRIC DATA DETECTED";
             } else {
-                document.getElementById('status').innerText = "PLACE PALM FOR ANALYSIS";
+                document.getElementById('status').innerText = "READY FOR SUBJECT";
             }
+            canvasCtx.restore();
         });
-
-        function draw3DGrid(lm) {
-            const w = canvasElement.width; const h = canvasElement.height;
-            canvasCtx.lineWidth = 1;
-            canvasCtx.strokeStyle = "rgba(0, 242, 255, 0.3)"; 
-            
-            const connections = [[0,1,2,3,4], [0,5,6,7,8], [5,9,13,17,0], [9,10,11,12], [13,14,15,16], [17,18,19,20]];
-            connections.forEach(path => {
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(lm[path[0]].x * w, lm[path[0]].y * h);
-                for(let i=1; i < path.length; i++) {
-                    canvasCtx.lineTo(lm[path[i]].x * w, lm[path[i]].y * h);
-                }
-                canvasCtx.stroke();
-            });
-        }
-
-        function drawPalmLines(lm) {
-            const w = canvasElement.width; const h = canvasElement.height;
-            canvasCtx.lineWidth = 5;
-            canvasCtx.lineCap = "round";
-            canvasCtx.shadowBlur = 10;
-
-            // HEART LINE (Pink)
-            canvasCtx.strokeStyle = "#ff00ff"; canvasCtx.shadowColor = "#ff00ff";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[17].x * w, lm[17].y * h + 20);
-            canvasCtx.bezierCurveTo(lm[13].x * w, lm[13].y * h, lm[9].x * w, lm[9].y * h, lm[5].x * w, lm[5].y * h + 20);
-            canvasCtx.stroke();
-
-            // HEAD LINE (Yellow)
-            canvasCtx.strokeStyle = "#ffff00"; canvasCtx.shadowColor = "#ffff00";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.lineTo(lm[13].x * w, lm[13].y * h + 40);
-            canvasCtx.stroke();
-
-            // LIFE LINE (Green)
-            canvasCtx.strokeStyle = "#00ff00"; canvasCtx.shadowColor = "#00ff00";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.quadraticCurveTo(lm[2].x * w, lm[5].y * h + 50, lm[0].x * w, lm[0].y * h - 20);
-            canvasCtx.stroke();
-            
-            canvasCtx.shadowBlur = 0; // Reset
-        }
-
-        function drawLaserScan() {
-            const w = canvasElement.width; const h = canvasElement.height;
-            laserY += (8 * laserDirection);
-            if (laserY > h || laserY < 0) laserDirection *= -1;
-
-            canvasCtx.shadowBlur = 20;
-            canvasCtx.shadowColor = "#00f2ff";
-            canvasCtx.strokeStyle = "rgba(0, 242, 255, 0.9)";
-            canvasCtx.lineWidth = 4;
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(0, laserY);
-            canvasCtx.lineTo(w, laserY);
-            canvasCtx.stroke();
-            canvasCtx.shadowBlur = 0;
-        }
 
         const camera = new Camera(videoElement, {
             onFrame: async () => { await hands.send({image: videoElement}); },

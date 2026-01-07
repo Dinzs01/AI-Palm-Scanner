@@ -42,20 +42,30 @@
         new QRCode(document.getElementById("qr-container"), { text: scannerUrl, width: 250, height: 250 });
     });
 
-    const readings = [
-        { heart: "Empathic and emotionally resilient.", head: "Highly logical and strategic.", life: "Vitality and strong recovery power.", fate: "Success through self-discipline." },
-        { heart: "Passionate and creative.", head: "Innovative and out-of-the-box thinker.", life: "Steady growth and long life.", fate: "A path marked by unique achievements." },
-        { heart: "Loyal and deeply intuitive.", head: "Sharp memory and quick wit.", life: "Active lifestyle and great energy.", fate: "Leadership and public recognition." }
+  const readings = [
+        { heart: "Deeply empathetic and sensitive to others' feelings.", head: "Strong focus on logic and practical problem-solving.", life: "Incredible physical vitality and a long, active journey.", fate: "Success through hard work and self-made opportunities." },
+        { heart: "Balanced emotions and a very warm personality.", head: "Creative thinker who finds unique solutions.", life: "A peaceful life with a focus on family and stability.", fate: "Natural leadership skills will lead to early career success." },
+        { heart: "Independent and self-reliant in emotional matters.", head: "Analytical mind with a great talent for science and math.", life: "A life full of travel and exciting new environments.", fate: "Unexpected opportunities will lead you to greatness." },
+        { heart: "Highly romantic and expressive with your feelings.", head: "Quick-witted and able to learn new skills very fast.", life: "Strong health and the ability to bounce back quickly.", fate: "A destiny shaped by artistic or creative pursuits." },
+        { heart: "Loyal friend who values deep, long-term connections.", head: "Calm under pressure; a very stable decision-maker.", life: "Energy levels that stay high even during busy times.", fate: "Financial success will come through persistent effort." },
+        { heart: "Compassionate nature; likely to help many people.", head: "Intuitive thinker who trusts their gut instincts.", life: "A vibrant life with many diverse interests and hobbies.", fate: "You will find success in a field you are truly passionate about." },
+        { heart: "Strong-willed and clear about emotional boundaries.", head: "A visionary who sees the 'big picture' easily.", life: "Consistency and steady growth throughout your years.", fate: "Major achievements are written in your late 20s." },
+        { heart: "Joyful and light-hearted; you bring energy to rooms.", head: "Detail-oriented and excellent at organizing tasks.", life: "A robust constitution and a very resilient spirit.", fate: "Your career will involve helping or teaching others." },
+        { heart: "Reserved but deeply thoughtful in relationships.", head: "Philosophical mind that loves exploring deep questions.", life: "A life of discovery and continuous learning.", fate: "Personal happiness will be your greatest achievement." },
+        { heart: "Dynamic emotions that fuel your creative work.", head: "Strategic thinker who plans several steps ahead.", life: "Great stamina for long-term physical or mental goals.", fate: "Public recognition for your unique talents is likely." }
     ];
 
     database.ref('palm_reading_data').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && data.scanning === true) {
+            // Pick a random reading from the 10 options
             const pick = readings[Math.floor(Math.random() * readings.length)];
-            document.getElementById('line-heart').innerHTML = "❤️ <b>Hridaya Rekha:</b> " + pick.heart;
-            document.getElementById('line-head').innerHTML = "🧠 <b>Matri Rekha:</b> " + pick.head;
-            document.getElementById('line-life').innerHTML = "🌱 <b>Jeevan Rekha:</b> " + pick.life;
-            document.getElementById('line-fate').innerHTML = "🔱 <b>Bhagya Rekha:</b> " + pick.fate;
+            
+            document.getElementById('line-heart').innerHTML = "❤️ <b>Heart Line:</b> " + pick.heart;
+            document.getElementById('line-head').innerHTML = "🧠 <b>Head Line:</b> " + pick.head;
+            document.getElementById('line-life').innerHTML = "🌱 <b>Life Line:</b> " + pick.life;
+            document.getElementById('line-fate').innerHTML = "🔱 <b>Fate Line:</b> " + pick.fate;
+
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('result-panel').style.display = 'block';
         }
@@ -67,3 +77,4 @@
 </script>
 </body>
 </html>
+

@@ -6,30 +6,30 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        /* CSS FOR DASHBOARD */
         body { background: #0c0c1e; color: #ffd700; font-family: 'Times New Roman', serif; text-align: center; margin: 0; padding: 20px; }
-        h1 { text-shadow: 0 0 10px gold; font-size: 3rem; }
-        #qr-container { background: white; padding: 20px; width: 250px; height: 250px; margin: 40px auto; border-radius: 15px; box-shadow: 0 0 20px rgba(255,255,255,0.2); display: flex; justify-content: center; align-items: center; }
-        .result-panel { display: none; margin: 50px auto; max-width: 700px; padding: 30px; border: 4px double gold; background: rgba(255,255,255,0.05); border-radius: 20px; animation: fadeIn 1.5s; }
-        .line-reading { margin: 25px; font-size: 22px; text-align: left; line-height: 1.6; border-left: 5px solid gold; padding-left: 15px; }
-        #resetBtn { margin-top: 30px; padding: 15px 40px; background: gold; color: #000; border: none; border-radius: 30px; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: 0.3s; }
-        #resetBtn:hover { transform: scale(1.1); background: #fff; }
-        @keyframes fadeIn { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
+        h1 { text-shadow: 0 0 10px gold; font-size: 3.5rem; }
+        #qr-container { background: white; padding: 20px; width: 250px; height: 250px; margin: 40px auto; border-radius: 15px; display: flex; justify-content: center; align-items: center; }
+        .result-panel { display: none; margin: 50px auto; max-width: 700px; padding: 30px; border: 4px double gold; background: rgba(255,215,0,0.05); border-radius: 20px; animation: fadeIn 1s; }
+        .line-reading { margin: 20px; font-size: 22px; text-align: left; border-left: 5px solid gold; padding-left: 15px; }
+        #resetBtn { margin-top: 30px; padding: 15px 40px; background: gold; color: #000; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
     </style>
 </head>
 <body>
-    <h1>✨ AI Palmistry ✨</h1>
+    <h1>✨ AI Samudrika Shastra ✨</h1>
     
     <div id="setup-screen">
-        <p style="font-size: 1.5rem;">Scan QR to analyze Palmar Flexion Creases</p>
-        <div id="qr-container"></div> </div>
+        <p style="font-size: 1.5rem;">Aligning Camera to Palmar Creases...</p>
+        <div id="qr-container"></div>
+    </div>
 
     <div id="result-panel" class="result-panel">
-        <h2>Your Destiny Revealed</h2>
-        <div id="line-heart" class="line-reading">❤️ <b>Heart Line:</b> Scanning...</div>
-        <div id="line-head" class="line-reading">🧠 <b>Head Line:</b> Scanning...</div>
-        <div id="line-life" class="line-reading">🌱 <b>Life Line:</b> Scanning...</div>
-        <button id="resetBtn">RESET FOR NEW VISITOR</button>
+        <h2>Destiny Analysis Complete</h2>
+        <div id="line-heart" class="line-reading">❤️ Heart Line:</div>
+        <div id="line-head" class="line-reading">🧠 Head Line:</div>
+        <div id="line-life" class="line-reading">🌱 Life Line:</div>
+        <div id="line-fate" class="line-reading">🔱 Fate Line:</div>
+        <button id="resetBtn">START NEW SCAN</button>
     </div>
 
 <script>
@@ -37,57 +37,33 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // --- FIX 1: GENERATE THE QR CODE ---
     window.addEventListener('load', function() {
-        // REPLACE WITH YOUR ACTUAL GITHUB URL
         const scannerUrl = "https://dinzs01.github.io/AI-Palm-Scanner/palm_scanner.html";
-        
-        new QRCode(document.getElementById("qr-container"), {
-            text: scannerUrl,
-            width: 250,
-            height: 250
-        });
+        new QRCode(document.getElementById("qr-container"), { text: scannerUrl, width: 250, height: 250 });
     });
 
-    // 1. Array of different Indian Astrology readings
     const readings = [
-        { heart: "Generous and empathetic.", head: "Analytical and logical.", life: "Full of adventure and travel." },
-        { heart: "Strong emotional balance.", head: "Creative and artistic mind.", life: "Stable and peaceful journey." },
-        { heart: "Deeply loyal and caring.", head: "Quick learner and sharp wit.", life: "High energy and leadership." }
+        { heart: "Empathic and emotionally resilient.", head: "Highly logical and strategic.", life: "Vitality and strong recovery power.", fate: "Success through self-discipline." },
+        { heart: "Passionate and creative.", head: "Innovative and out-of-the-box thinker.", life: "Steady growth and long life.", fate: "A path marked by unique achievements." },
+        { heart: "Loyal and deeply intuitive.", head: "Sharp memory and quick wit.", life: "Active lifestyle and great energy.", fate: "Leadership and public recognition." }
     ];
 
-    // 2. Listen for the scan
     database.ref('palm_reading_data').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data && data.scanning === true) {
-            const randomPick = readings[Math.floor(Math.random() * readings.length)];
-            
-            // Update the text on the screen using the correct IDs
-            document.getElementById('line-heart').innerHTML = "❤️ <b>Heart Line:</b> " + randomPick.heart;
-            document.getElementById('line-head').innerHTML = "🧠 <b>Head Line:</b> " + randomPick.head;
-            document.getElementById('line-life').innerHTML = "🌱 <b>Life Line:</b> " + randomPick.life;
-
+            const pick = readings[Math.floor(Math.random() * readings.length)];
+            document.getElementById('line-heart').innerHTML = "❤️ <b>Hridaya Rekha:</b> " + pick.heart;
+            document.getElementById('line-head').innerHTML = "🧠 <b>Matri Rekha:</b> " + pick.head;
+            document.getElementById('line-life').innerHTML = "🌱 <b>Jeevan Rekha:</b> " + pick.life;
+            document.getElementById('line-fate').innerHTML = "🔱 <b>Bhagya Rekha:</b> " + pick.fate;
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('result-panel').style.display = 'block';
         }
     });
 
-    // Reset logic
     document.getElementById('resetBtn').onclick = function() {
-        database.ref('palm_reading_data').set({ scanning: false }).then(() => {
-            location.reload();
-        });
+        database.ref('palm_reading_data').set({ scanning: false }).then(() => { location.reload(); });
     };
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-

@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Science Expo - Scanner</title>
+    <title>AI 3D Palm Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        #status { position: absolute; top: 10%; width: 100%; text-align: center; color: #00ffff; font-weight: bold; font-size: 1.5rem; text-shadow: 0 0 10px #00ffff; z-index: 10; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+        #status { position: absolute; top: 15px; width: 100%; text-align: center; color: #00f2ff; font-weight: bold; font-size: 1.2rem; z-index: 10; text-transform: uppercase; letter-spacing: 2px; }
         video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
-    <div id="status">READY FOR SCAN</div>
+    <div id="status">System Online - Awaiting Subject</div>
     <video id="input_video" playsinline></video>
     <canvas id="output_canvas"></canvas>
 
@@ -25,7 +25,9 @@
         const videoElement = document.getElementById('input_video');
         const canvasElement = document.getElementById('output_canvas');
         const canvasCtx = canvasElement.getContext('2d');
-        let scanY = 0; // For the moving laser effect
+        
+        let laserY = 0;
+        let laserDirection = 1;
 
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
         hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7 });
@@ -37,50 +39,66 @@
             
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
-                drawProLines(lm);
+                
+                // 1. Draw the 3D Cyber-Grid (Hand Only)
+                draw3DGrid(lm);
+                
+                // 2. Draw the Moving Laser Scan Line
                 drawLaserScan();
+
                 database.ref('palm_reading_data').update({ scanning: true });
-                document.getElementById('status').innerText = "ANALYZING BIOMETRICS...";
+                document.getElementById('status').innerText = "BIOMETRIC SCAN IN PROGRESS...";
             } else {
-                document.getElementById('status').innerText = "PLACE PALM IN VIEW";
+                document.getElementById('status').innerText = "PLACE PALM FOR ANALYSIS";
             }
         });
 
-        function drawLaserScan() {
+        // Creates the 3D Grid effect ONLY on the hand
+        function draw3DGrid(lm) {
             const w = canvasElement.width; const h = canvasElement.height;
-            scanY = (scanY + 15) % h;
-            canvasCtx.strokeStyle = "rgba(0, 255, 255, 0.8)";
-            canvasCtx.lineWidth = 3;
-            canvasCtx.shadowBlur = 20;
-            canvasCtx.shadowColor = "#00ffff";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(0, scanY);
-            canvasCtx.lineTo(w, scanY);
-            canvasCtx.stroke();
+            canvasCtx.lineWidth = 1;
+            canvasCtx.strokeStyle = "rgba(0, 242, 255, 0.4)"; // Faint Cyan
+            
+            // Draw connections between joints to create a mesh
+            const connections = [
+                [0,1,2,3,4], [0,5,6,7,8], [5,9,13,17,0], [9,10,11,12], [13,14,15,16], [17,18,19,20]
+            ];
+
+            connections.forEach(path => {
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(lm[path[0]].x * w, lm[path[0]].y * h);
+                for(let i=1; i < path.length; i++) {
+                    canvasCtx.lineTo(lm[path[i]].x * w, lm[path[i]].y * h);
+                }
+                canvasCtx.stroke();
+            });
+
+            // Draw 3D nodes (dots) on joints
+            canvasCtx.fillStyle = "#00f2ff";
+            lm.forEach(point => {
+                canvasCtx.beginPath();
+                canvasCtx.arc(point.x * w, point.y * h, 2, 0, 2 * Math.PI);
+                canvasCtx.fill();
+            });
         }
 
-        function drawProLines(lm) {
+        // Horizontal laser line that moves up and down
+        function drawLaserScan() {
             const w = canvasElement.width; const h = canvasElement.height;
-            canvasCtx.lineWidth = 5;
-            canvasCtx.lineCap = "round";
             
-            // --- HEART LINE (Pink/Purple) ---
-            canvasCtx.strokeStyle = "#ff00ff"; canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[17].x * w, lm[17].y * h + 20);
-            canvasCtx.bezierCurveTo(lm[13].x * w, lm[13].y * h, lm[9].x * w, lm[9].y * h, lm[5].x * w, lm[5].y * h + 20);
-            canvasCtx.stroke();
+            laserY += (5 * laserDirection);
+            if (laserY > h || laserY < 0) laserDirection *= -1;
 
-            // --- HEAD LINE (Yellow) ---
-            canvasCtx.strokeStyle = "#ffff00"; canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.lineTo(lm[13].x * w, lm[13].y * h + 40);
+            canvasCtx.shadowBlur = 15;
+            canvasCtx.shadowColor = "#00f2ff";
+            canvasCtx.strokeStyle = "rgba(0, 242, 255, 0.8)";
+            canvasCtx.lineWidth = 4;
+            
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(0, laserY);
+            canvasCtx.lineTo(w, laserY);
             canvasCtx.stroke();
-
-            // --- LIFE LINE (Green) ---
-            canvasCtx.strokeStyle = "#00ff00"; canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.quadraticCurveTo(lm[2].x * w, lm[5].y * h + 50, lm[0].x * w, lm[0].y * h - 20);
-            canvasCtx.stroke();
+            canvasCtx.shadowBlur = 0; // Reset blur
         }
 
         const camera = new Camera(videoElement, {
@@ -91,4 +109,3 @@
     </script>
 </body>
 </html>
-

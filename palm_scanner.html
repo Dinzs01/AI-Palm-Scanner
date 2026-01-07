@@ -1,35 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Scanner</title>
+    <title>AI Palm Scanner - Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-<style>
-    body { margin: 0; background: #000; overflow: hidden; }
-    #canvas_container { position: relative; width: 100vw; height: 100vh; }
-    
-    /* Set scaleX to 1 for the BACK camera */
-    video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(1); }
-    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(1); }
-    
-    #status { position: absolute; top: 20px; width: 100%; text-align: center; z-index: 100; color: gold; font-weight: bold; }
-</style>
-
-    
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        #canvas_container { position: relative; width: 100vw; height: 100vh; }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(1); }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(1); }
+        #status { position: absolute; top: 20px; width: 100%; text-align: center; z-index: 100; color: gold; font-weight: bold; font-size: 1.2rem; text-shadow: 2px 2px 4px #000; }
+    </style>
 </head>
 <body>
-    <div id="status">INITIALIZING CAMERA...</div>
+    <div id="status">INITIALIZING AI SCANNER...</div>
     <div id="canvas_container">
         <video id="input_video" playsinline></video>
         <canvas id="output_canvas"></canvas>
     </div>
 
     <script>
-        // 1. FIREBASE SETUP
         const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
@@ -38,67 +31,66 @@
         const canvasElement = document.getElementById('output_canvas');
         const canvasCtx = canvasElement.getContext('2d');
 
-        // 2. AI HANDS SETUP
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6 });
 
         hands.onResults((results) => {
-            // Adjust canvas size to match video
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
-
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
-                drawGlowingLines(lm);
-                
-                // Alert the laptop
+                drawScientificLines(lm);
                 database.ref('palm_reading_data').update({ scanning: true });
-                document.getElementById('status').innerText = "AI DETECTED HAND";
+                document.getElementById('status').innerText = "SCANNING PALMAR CREASES...";
             } else {
-                document.getElementById('status').innerText = "SHOW YOUR PALM";
+                document.getElementById('status').innerText = "ALIGN PALM WITH CAMERA";
             }
             canvasCtx.restore();
         });
 
-        function drawGlowingLines(lm) {
-            canvasCtx.lineWidth = 10;
-            canvasCtx.lineCap = "round";
-            canvasCtx.shadowBlur = 15;
+        function drawScientificLines(lm) {
             const w = canvasElement.width; const h = canvasElement.height;
+            canvasCtx.lineWidth = 4;
+            canvasCtx.lineCap = "round";
+            canvasCtx.shadowBlur = 10;
 
-            // Heart Line (Pink)
+            // --- HEART LINE (Pink) ---
             canvasCtx.strokeStyle = "#ff00ff"; canvasCtx.shadowColor = "#ff00ff";
             canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[17].x * w, lm[17].y * h);
-            canvasCtx.quadraticCurveTo(lm[13].x * w, lm[10].y * h, lm[5].x * w, lm[6].y * h);
+            canvasCtx.moveTo(lm[17].x * w, lm[17].y * h + (h*0.05));
+            canvasCtx.bezierCurveTo(lm[13].x * w, lm[13].y * h + (h*0.02), lm[9].x * w, lm[9].y * h + (h*0.02), lm[5].x * w, lm[5].y * h + (h*0.05));
+            canvasCtx.stroke();
+
+            // --- HEAD LINE (Yellow) ---
+            canvasCtx.strokeStyle = "#ffff00"; canvasCtx.shadowColor = "#ffff00";
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
+            canvasCtx.lineTo(lm[13].x * w, lm[13].y * h + (h*0.1));
+            canvasCtx.stroke();
+
+            // --- LIFE LINE (Green) ---
+            canvasCtx.strokeStyle = "#00ff00"; canvasCtx.shadowColor = "#00ff00";
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
+            canvasCtx.quadraticCurveTo(lm[2].x * w, lm[5].y * h + (h*0.1), lm[0].x * w, lm[0].y * h - (h*0.05));
+            canvasCtx.stroke();
+
+            // --- FATE LINE (Blue) ---
+            canvasCtx.strokeStyle = "#00ffff"; canvasCtx.shadowColor = "#00ffff";
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(lm[0].x * w, lm[0].y * h - (h*0.05));
+            canvasCtx.lineTo(lm[9].x * w, lm[9].y * h + (h*0.05));
             canvasCtx.stroke();
         }
 
-        // 3. START CAMERA
-// 3. START CAMERA (Updated for Back Camera)
-const camera = new Camera(videoElement, {
-    onFrame: async () => { 
-        await hands.send({image: videoElement}); 
-    },
-    // 'user' = Selfie/Front, 'environment' = Back Camera
-    facingMode: 'environment', 
-    width: 640, 
-    height: 480
-});
-
-camera.start().then(() => {
-    document.getElementById('status').innerText = "BACK CAMERA ACTIVE";
-}).catch(err => {
-    // If back camera is blocked, try to open whatever is available
-    console.error("Back camera error, falling back:", err);
-    document.getElementById('status').innerText = "CAMERA ERROR: " + err;
-});
-
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await hands.send({image: videoElement}); },
+            facingMode: 'environment', width: 640, height: 480
+        });
+        camera.start();
     </script>
 </body>
 </html>
-
-

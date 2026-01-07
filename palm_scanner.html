@@ -1,26 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Palm Scanner - Pro</title>
+    <title>AI Science Expo - Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
-        #canvas_container { position: relative; width: 100vw; height: 100vh; }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(1); }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(1); }
-        #status { position: absolute; top: 20px; width: 100%; text-align: center; z-index: 100; color: gold; font-weight: bold; font-size: 1.2rem; text-shadow: 2px 2px 4px #000; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        #status { position: absolute; top: 10%; width: 100%; text-align: center; color: #00ffff; font-weight: bold; font-size: 1.5rem; text-shadow: 0 0 10px #00ffff; z-index: 10; }
+        video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
-    <div id="status">INITIALIZING AI SCANNER...</div>
-    <div id="canvas_container">
-        <video id="input_video" playsinline></video>
-        <canvas id="output_canvas"></canvas>
-    </div>
+    <div id="status">READY FOR SCAN</div>
+    <video id="input_video" playsinline></video>
+    <canvas id="output_canvas"></canvas>
 
     <script>
         const firebaseConfig = { databaseURL: "https://palm-scanner-expo-default-rtdb.europe-west1.firebasedatabase.app/" };
@@ -30,67 +25,70 @@
         const videoElement = document.getElementById('input_video');
         const canvasElement = document.getElementById('output_canvas');
         const canvasCtx = canvasElement.getContext('2d');
+        let scanY = 0; // For the moving laser effect
 
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6 });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7 });
 
         hands.onResults((results) => {
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
-            canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
-                drawScientificLines(lm);
+                drawProLines(lm);
+                drawLaserScan();
                 database.ref('palm_reading_data').update({ scanning: true });
-                document.getElementById('status').innerText = "SCANNING PALMAR CREASES...";
+                document.getElementById('status').innerText = "ANALYZING BIOMETRICS...";
             } else {
-                document.getElementById('status').innerText = "ALIGN PALM WITH CAMERA";
+                document.getElementById('status').innerText = "PLACE PALM IN VIEW";
             }
-            canvasCtx.restore();
         });
 
-        function drawScientificLines(lm) {
+        function drawLaserScan() {
             const w = canvasElement.width; const h = canvasElement.height;
-            canvasCtx.lineWidth = 4;
-            canvasCtx.lineCap = "round";
-            canvasCtx.shadowBlur = 10;
-
-            // --- HEART LINE (Pink) ---
-            canvasCtx.strokeStyle = "#ff00ff"; canvasCtx.shadowColor = "#ff00ff";
+            scanY = (scanY + 15) % h;
+            canvasCtx.strokeStyle = "rgba(0, 255, 255, 0.8)";
+            canvasCtx.lineWidth = 3;
+            canvasCtx.shadowBlur = 20;
+            canvasCtx.shadowColor = "#00ffff";
             canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[17].x * w, lm[17].y * h + (h*0.05));
-            canvasCtx.bezierCurveTo(lm[13].x * w, lm[13].y * h + (h*0.02), lm[9].x * w, lm[9].y * h + (h*0.02), lm[5].x * w, lm[5].y * h + (h*0.05));
+            canvasCtx.moveTo(0, scanY);
+            canvasCtx.lineTo(w, scanY);
+            canvasCtx.stroke();
+        }
+
+        function drawProLines(lm) {
+            const w = canvasElement.width; const h = canvasElement.height;
+            canvasCtx.lineWidth = 5;
+            canvasCtx.lineCap = "round";
+            
+            // --- HEART LINE (Pink/Purple) ---
+            canvasCtx.strokeStyle = "#ff00ff"; canvasCtx.beginPath();
+            canvasCtx.moveTo(lm[17].x * w, lm[17].y * h + 20);
+            canvasCtx.bezierCurveTo(lm[13].x * w, lm[13].y * h, lm[9].x * w, lm[9].y * h, lm[5].x * w, lm[5].y * h + 20);
             canvasCtx.stroke();
 
             // --- HEAD LINE (Yellow) ---
-            canvasCtx.strokeStyle = "#ffff00"; canvasCtx.shadowColor = "#ffff00";
-            canvasCtx.beginPath();
+            canvasCtx.strokeStyle = "#ffff00"; canvasCtx.beginPath();
             canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.lineTo(lm[13].x * w, lm[13].y * h + (h*0.1));
+            canvasCtx.lineTo(lm[13].x * w, lm[13].y * h + 40);
             canvasCtx.stroke();
 
             // --- LIFE LINE (Green) ---
-            canvasCtx.strokeStyle = "#00ff00"; canvasCtx.shadowColor = "#00ff00";
-            canvasCtx.beginPath();
+            canvasCtx.strokeStyle = "#00ff00"; canvasCtx.beginPath();
             canvasCtx.moveTo(lm[1].x * w, lm[1].y * h);
-            canvasCtx.quadraticCurveTo(lm[2].x * w, lm[5].y * h + (h*0.1), lm[0].x * w, lm[0].y * h - (h*0.05));
-            canvasCtx.stroke();
-
-            // --- FATE LINE (Blue) ---
-            canvasCtx.strokeStyle = "#00ffff"; canvasCtx.shadowColor = "#00ffff";
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(lm[0].x * w, lm[0].y * h - (h*0.05));
-            canvasCtx.lineTo(lm[9].x * w, lm[9].y * h + (h*0.05));
+            canvasCtx.quadraticCurveTo(lm[2].x * w, lm[5].y * h + 50, lm[0].x * w, lm[0].y * h - 20);
             canvasCtx.stroke();
         }
 
         const camera = new Camera(videoElement, {
             onFrame: async () => { await hands.send({image: videoElement}); },
-            facingMode: 'environment', width: 640, height: 480
+            facingMode: 'environment', width: 1280, height: 720
         });
         camera.start();
     </script>
 </body>
 </html>
+
